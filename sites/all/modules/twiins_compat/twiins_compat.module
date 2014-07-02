@@ -1,0 +1,53 @@
+<?php
+
+function twiins_compat_form_alter(&$form, &$state, $id) {
+
+if ($form['#id']=='views-exposed-form-compatibilidad-page'){
+      $form['field_marca_tid']['#options'][1]='Your brand is not listed?';
+      //$form['field_marca_tid']['#options']['Select']='-- Select your brand --';
+      //  $form['field_marca_tid']['#options'][]='¿No aparece tu marca?';
+    unset($form['field_marca_tid']['#options']['All']);
+        $form['#validate'][] = '_twiins_compat_validator';
+    }
+    
+elseif($form['#form_id']=='sugerencia_de_casco_node_form'){
+  $form['field_modelo']['#states'] = array(
+      'visible' => array(
+        ':input[name="field__sabes_el_moelo_[und]"]' => array('value' => '1'),
+      ),
+ 
+       'required' => array(
+        ':input[name="field__sabes_el_moelo_"]' => array('value' => '1'),
+      ),
+        
+        );
+  unset($form['field_modelo']['und'][0]['value']['#title']);
+  //$form['field_modelo']['und']['#title']="";
+  //$form['field_modelo']['und'][0]['value']['#title']="xxx";
+  
+  $form['info']['#prefix']='<div class="info-sugerencia">';
+  $form['info']['#suffix']='</div>';
+    $form['info']['#markup']='Estamos trabajando para tener más información sobre la marca que buscas
+
+<em>Sugerencia: ¡pruébate algún modelo Twiins y comprueba el ajuste de tu casco!</em>';
+    $form['info']['#weight']=100;
+    dsm($form);    
+    
+}
+    
+
+}
+
+
+function twiins_compat_field_widget_form_alter(&$element, &$form_state, $context) {
+  if ($context['field']['type'] == 'list_boolean' && isset($element['#options'])) {
+    $element['#options'] = array_reverse($element['#options'], TRUE);
+  }
+}
+
+function _twiins_compat_validator(&$form, &$form_state) {
+    
+    //$options = array('query' => array('field_marca_tid' => 'none'));
+    //if ($form_state['input']['field_marca_tid']=='All')  drupal_goto('compatibilidad',$options);
+    if (isset($form_state['input']['field_marca_tid']) && $form_state['input']['field_marca_tid']==1)  drupal_goto('node/add/sugerencia-de-casco');
+}

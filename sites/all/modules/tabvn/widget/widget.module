@@ -1,0 +1,136 @@
+<?php
+
+/**
+ * Implementation of hook_block_info()
+ */
+function widget_block_info() {
+    // This example comes from node.module.
+
+    $blocks['widget_twitter'] = array(
+        'info' => t('Latest Tweets'),
+    );
+
+    $blocks['widget_flickr'] = array(
+        'info' => t('Flickr Widget'),
+    );
+
+
+    return $blocks;
+}
+
+/**
+ * Implementation of hook_block_configure()
+ */
+function widget_block_configure($delta = '') {
+    $form = array();
+    switch ($delta) {
+        case 'widget_twitter':
+            $form['widget_twitter_username'] = array(
+                '#type' => 'textfield',
+                '#title' => t('Your twitter username'),
+                '#default_value' => variable_get('widget_twitter_username', 'tabvn'),
+                '#description' => t('Eg: tabvn')
+            );
+
+            $form['widget_twitter_tweets_count'] = array(
+                '#type' => 'select',
+                '#title' => t('Number of recent tweets items to display'),
+                '#default_value' => variable_get('widget_twitter_tweets_count', 2),
+                '#options' => drupal_map_assoc(array(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30)),
+            );
+            break;
+
+
+        case 'widget_flickr':
+
+
+            $form['widget_flickr_id'] = array(
+                '#type' => 'textfield',
+                '#title' => t('Your flickr ID'),
+                '#default_value' => variable_get('widget_flickr_id', '78504614@N05'),
+                '#description' => t('Eg: 78504614@N05')
+            );
+
+            $form['widget_flickr_photo_count'] = array(
+                '#type' => 'select',
+                '#title' => t('Number of recent photos items to display'),
+                '#default_value' => variable_get('widget_flickr_photo_count', 6),
+                '#options' => drupal_map_assoc(array(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30)),
+            );
+
+
+            break;
+    }
+
+    return $form;
+}
+
+/**
+ * Implementation of hook_block_save()
+ */
+function widget_block_save($delta = '', $edit = array()) {
+    switch ($delta) {
+        case 'widget_twitter':
+            variable_set('widget_twitter_username', $edit['widget_twitter_username']);
+            variable_set('widget_twitter_tweets_count', $edit['widget_twitter_tweets_count']);
+            break;
+
+        case 'widget_flickr':
+            variable_set('widget_flickr_id', $edit['widget_flickr_id']);
+            variable_set('widget_flickr_photo_count', $edit['widget_flickr_photo_count']);
+            break;
+    }
+}
+
+/**
+ * Implementation of hook_block_view()
+ */
+function widget_block_view($delta = '') {
+    // This example is adapted from node.module.
+    $block = array();
+
+    switch ($delta) {
+        case 'widget_twitter':
+            $block['title'] = t('Latest Tweets');
+            $block['content'] = array(
+                '#theme' => 'widget_twitter',
+                '#settings' => array(
+                    'widget_twitter_username' => variable_get('widget_twitter_username', 'tabvn'),
+                    'widget_twitter_tweets_count' => variable_get('widget_twitter_tweets_count', 2),
+                ),
+            );
+            break;
+
+
+        case 'widget_flickr':
+
+            $block['title'] = t('Photo Stream');
+            $block['content'] = array(
+                '#theme' => 'widget_flickr',
+                '#settings' => array(
+                    'widget_flickr_id' => variable_get('widget_flickr_id', '78504614@N05'),
+                    'widget_flickr_photo_count' => variable_get('widget_flickr_photo_count', 6),
+                ),
+            );
+
+            break;
+    }
+    return $block;
+}
+
+/**
+ * Implementation of hook_theme()
+ * 
+ */
+function widget_theme($existing, $type, $theme, $path) {
+    return array(
+        'widget_twitter' => array(
+            'variables' => array('settings' => array('widget_twitter_username' => NULL, 'widget_twitter_tweets_count' => NULL)),
+            'template' => 'widget_twitter'
+        ),
+        'widget_flickr' => array(
+            'variables' => array('settings' => array('widget_flickr_id' => NULL, 'widget_flickr_photo_count' => NULL)),
+            'template' => 'widget_flickr'
+        ),
+    );
+}

@@ -1,0 +1,11 @@
+name = custom_blog
+description = Add custom blog setting
+core = 7.x
+package = Tabvn
+dependencies[] = features
+dependencies[] = image
+dependencies[] = taxonomy
+features[features_api][] = api:1
+features[field][] = node-blog-field_image
+features[field][] = node-blog-field_tags
+features[taxonomy][] = tags

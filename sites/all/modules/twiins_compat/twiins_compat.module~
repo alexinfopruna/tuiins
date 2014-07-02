@@ -1,0 +1,132 @@
+<?php
+
+//function twiins_form_alter($form, $state, $id) {
+//	dpm(array($form, $state,$id));
+//}
+
+function twiins_form_contact_site_form_alter(&$form, &$state) {
+	//dpm(array($form, $state));
+	$flds = array(
+		'name' => t('Name'),
+		'mail' => t('Email'),
+		'subject' => t('Subject'),
+		'copy' => t('Send me a copy'),
+	);
+	
+	foreach ($form as $name => $v) {
+		if (!empty($flds[$name])) {
+			$form[$name]['#title'] = $flds[$name];
+		}
+	}
+	$form['actions']['submit']['#value'] = t('Send');
+	//unset($form['copy']['#access']);
+	return $form;
+}
+
+function twiins_language_switch_links_alter(array &$links, $type, $path) {
+//	dpm(array('LINKS', $links, $type, $path));
+	foreach ($links as $k =>$l) {
+		$links[$k]['language'] = 0;
+	}
+}
+
+function twiins_block_view_locale_language_alter(&$data, $block) {
+//	dpm(array($data, $block));
+//	$languages = language_list();
+//	$lang_sub = array();
+//	foreach ($languages as $code=>$language) {
+//		$lang_sub[$language->native] = $code;
+//	}
+//	$data['content'] = strtr($data['content'], $lang_sub);
+	global $language;
+	//kpr(array($data,$block));
+//	$data['content'] = "<a class=\"lang-menu-trigger\" href=\"#\">&nabla;&nbsp;".$language->language."</a>".$data['content'];
+	$data['content'] = $data['content'];
+}
+
+//function twiins_preprocess_links(&$vars) {
+//	dpm($vars);
+//}
+
+function twiins_block_info() {
+	$items = array();
+	
+	$items['continents'] = array('info' => 'Continents', 'cache' => DRUPAL_NO_CACHE); 
+	
+	return $items;
+}
+
+function twiins_block_view($blockid) {
+	if (function_exists("_twiins_block_$blockid")) {
+		//kpr($blockid);
+		return call_user_func_array("_twiins_block_$blockid",array());
+	}
+	return array();
+}
+
+function _twiins_block_continents() {
+	$block = array('title'=> t('Continents'), 'content' => array());
+	
+	$block['content']['#theme'] = 'item_list';
+	$block['content']['#items'] = array();
+	$s = db_select('field_data_field_world_region','w')
+		->fields('w',array('field_world_region_value'))
+		->groupBy('w.field_world_region_value')
+		->execute();
+//	dpm($s);
+	while ($c = $s->fetch()) {
+//		dpm($c);
+		if ($c->field_world_region_value == 'Online') {
+			continue;
+		}
+		
+		$options = array('attributes' => array());
+//		dpm(array(arg(0),arg(1), $c,arg(1) == NULL, $c->field_world_region_value == 'Europe'));
+		if (arg(0) == 'distributors' and arg(1) == NULL and $c->field_world_region_value == 'Europe') {
+			$options['attributes']['class'] = 'active';
+		}
+		$item = l(t($c->field_world_region_value), 'distributors/'.strtolower($c->field_world_region_value),$options);
+		$block['content']['#items'][] = $item;
+	}
+	return $block;
+}
+
+function _is_context_active($context) {
+    if (module_exists('context')) {
+        $active_contexts = context_active_contexts();
+        if ($active_contexts) {
+            if (array_key_exists($context, $active_contexts)) {
+                return TRUE;
+            }
+        }
+    }
+ 
+    return FALSE;  
+}
+
+/**
+* Implements hook_token_info(). This hook will register tow token lname and fname.
+*/
+function twiins_token_info() {
+  $info = array('tokens'=>array('variable'=>array()));
+  $info['tokens']['variable']['cur_language'] = array(
+    'name' => t('Current language'),
+    'description' => t('Page\'s current language'),
+  );
+  
+  return $info;
+}
+
+/**
+* Implements hook_tokens(). This hook will operate the token and replace it with it's value.
+*/
+function twiins_tokens($type, $tokens, array $data = array(), array $options = array()) {
+    $replacements = array();
+    $sanitize = !empty($options['sanitize']);
+	global $language;
+    if ($type == 'variable' && array_key_exists('cur_language',$tokens)) {
+       $replacements['cur_language'] = $language->language;   
+    }
+//	kpr(array($type,$tokens,$replacements, $language));
+    return $replacements;
+}

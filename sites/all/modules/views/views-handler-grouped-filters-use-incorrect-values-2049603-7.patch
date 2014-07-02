@@ -1,0 +1,17 @@
+diff --git a/includes/handlers.inc b/includes/handlers.inc
+index 2a33d5d..dc155e8 100644
+--- a/includes/handlers.inc
++++ b/includes/handlers.inc
+@@ -1006,6 +1006,12 @@ class views_many_to_one_helper {
+       $options['group'] = 0;
+     }
+ 
++    if (isset($options['is_grouped']) && $options['is_grouped'] && isset($this->handler->group_info)) {
++      $value = $this->handler->group_info;
++    } else {
++      $value = $this->handler->value;
++    }
++
+     // add_condition determines whether a single expression is enough(FALSE) or the
+     // conditions should be added via an db_or()/db_and() (TRUE).
+     $add_condition = TRUE;

@@ -1,0 +1,207 @@
+<?php
+
+function custom_block_info() {
+
+  $blocks['recent_projects'] = array(
+      'info' => t('[custom] Recent Work'),
+          // DRUPAL_CACHE_PER_ROLE will be assumed.
+  );
+
+
+  $blocks['recent_posts'] = array(
+      'info' => t('[custom] Recent posts'),
+          // DRUPAL_CACHE_PER_ROLE will be assumed.
+  );
+
+  return $blocks;
+}
+
+function custom_block_configure($delta = '') {
+  // This example comes from node.module.
+  $form = array();
+  switch ($delta) {
+
+    case 'recent_projects':
+
+      $form['recent_projects_block_count'] = array(
+          '#type' => 'select',
+          '#title' => t('Number of items to display'),
+          '#default_value' => variable_get('recent_projects_block_count', 8),
+          '#options' => drupal_map_assoc(array(3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 36, 40)),
+      );
+
+      break;
+
+    case 'recent_posts':
+
+      $form['recent_posts_block_count'] = array(
+          '#type' => 'select',
+          '#title' => t('Number of items to display'),
+          '#default_value' => variable_get('recent_posts_block_count', 8),
+          '#options' => drupal_map_assoc(array(3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 36, 40)),
+      );
+      break;
+  }
+  return $form;
+}
+
+function custom_block_save($delta = '', $edit = array()) {
+  // This example comes from node.module.
+
+  switch ($delta) {
+
+
+    case 'recent_projects':
+      variable_set('recent_projects_block_count', $edit['recent_projects_block_count']);
+      break;
+
+    case 'recent_posts':
+      variable_set('recent_posts_block_count', $edit['recent_posts_block_count']);
+      break;
+  }
+}
+
+function custom_block_view($delta = '') {
+  // This example is adapted from node.module.
+  $block = array();
+
+  switch ($delta) {
+
+    case 'recent_projects':
+      $node_limit = variable_get('recent_projects_block_count', 8);
+      $content_type = 'portfolio';
+      $query = db_query('SELECT n.nid FROM {node} n WHERE n.type = :type AND n.status = 1 ORDER BY n.created DESC LIMIT 0, ' . $node_limit, array(':type' => $content_type));
+      $nids = $query->fetchCol();
+      $nodes = node_load_multiple($nids);
+
+
+      $block['title'] = '';
+
+      if (!empty($nodes)) {
+        $block['content'] = array(
+            '#theme' => 'recent_projects',
+            '#nodes' => $nodes,
+            '#title' => custom_block_get_title($delta),
+        );
+      }
+
+      break;
+
+    case 'recent_posts':
+
+      $node_limit = variable_get('recent_posts_block_count', 8);
+      $content_type = 'blog';
+      $query = db_query('SELECT n.nid FROM {node} n WHERE n.type = :type AND n.status = 1 ORDER BY n.created DESC LIMIT 0, ' . $node_limit, array(':type' => $content_type));
+      $nids = $query->fetchCol();
+      $nodes = node_load_multiple($nids);
+
+
+      $block['title'] = '';
+      if (!empty($nodes)) {
+        $block['content'] = array(
+            '#theme' => 'recent_posts',
+            '#nodes' => $nodes,
+            '#title' => custom_block_get_title($delta),
+        );
+      }
+
+
+      break;
+  }
+  return $block;
+}
+
+function custom_theme($existing, $type, $theme, $path) {
+  return array(
+      'recent_projects' => array(
+          'variables' => array('nodes' => NULL, 'title' => NULL),
+          'template' => 'recent_projects',
+      ),
+      'recent_posts' => array(
+          'variables' => array('nodes' => NULL, 'title' => NULL),
+          'template' => 'recent_posts',
+      ),
+  );
+}
+
+function custom_trim_text($alter, $value) {
+  if (drupal_strlen($value) > $alter['max_length']) {
+    $value = drupal_substr($value, 0, $alter['max_length']);
+    // TODO: replace this with cleanstring of ctools
+    if (!empty($alter['word_boundary'])) {
+      $regex = "(.*)\b.+";
+      if (function_exists('mb_ereg')) {
+        mb_regex_encoding('UTF-8');
+        $found = mb_ereg($regex, $value, $matches);
+      } else {
+        $found = preg_match("/$regex/us", $value, $matches);
+      }
+      if ($found) {
+        $value = $matches[1];
+      }
+    }
+    // Remove scraps of HTML entities from the end of a strings
+    $value = rtrim(preg_replace('/(?:<(?!.+>)|&(?!.+;)).*$/us', '', $value));
+
+    if (!empty($alter['ellipsis'])) {
+      $value .= t('...');
+    }
+  }
+  if (!empty($alter['html'])) {
+    $value = _filter_htmlcorrector($value);
+  }
+
+  return $value;
+}
+
+function custom_format_comma_field($field_category, $node, $limit = NULL) {
+  $category_arr = array();
+  $category = '';
+  if (!empty($node->{$field_category}[LANGUAGE_NONE])) {
+    foreach ($node->{$field_category}[LANGUAGE_NONE] as $item) {
+      $term = taxonomy_term_load($item['tid']);
+      if ($term) {
+        $category_arr[] = l($term->name, 'taxonomy/term/' . $item['tid']);
+      }
+
+      if ($limit) {
+        if (count($category_arr) == $limit) {
+          $category = implode(', ', $category_arr);
+          return $category;
+        }
+      }
+    }
+  }
+  $category = implode(', ', $category_arr);
+
+  return $category;
+}
+
+function custom_format_category_field($field_category, $node, $limit = NULL) {
+  $category_arr = array();
+  $category = '';
+  if (!empty($node->{$field_category}[LANGUAGE_NONE])) {
+    foreach ($node->{$field_category}[LANGUAGE_NONE] as $item) {
+      $term = taxonomy_term_load($item['tid']);
+      if ($term) {
+        $category_arr[] = $term->name;
+      }
+
+      if ($limit) {
+        if (count($category_arr) == $limit) {
+          $category = implode('/ ', $category_arr);
+          return $category;
+        }
+      }
+    }
+  }
+  $category = implode('/ ', $category_arr);
+
+  return $category;
+}
+
+function custom_block_get_title($delta) {
+  $block = db_query('SELECT title FROM {block} WHERE delta = :delta', array(':delta' => $delta))->fetchObject();
+
+  return $block->title ? $block->title : '';
+}
